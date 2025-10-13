@@ -1,0 +1,10 @@
+package repository
+
+import (
+	"GoBank/internal/domain"
+	"context"
+)
+
+type UserRepository interface {
+	CheckUserInDataBase(ctx context.Context, email string) (domain.User, error)
+}
