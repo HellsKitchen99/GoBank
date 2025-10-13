@@ -14,7 +14,7 @@ type UserService struct {
 	repo repository.UserRepository
 }
 
-func NewJwtService(repo repository.UserRepository) *UserService {
+func NewUserService(repo repository.UserRepository) *UserService {
 	var userService UserService = UserService{
 		repo: repo,
 	}
