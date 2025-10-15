@@ -34,16 +34,17 @@ func (r *UserRepo) CheckUserInDataBase(ctx context.Context, email string) (domai
 func (r *UserRepo) CreateUser(ctx context.Context, name, email, password string, roles []string) (int64, error) {
 	_, err := r.CheckUserInDataBase(ctx, email)
 	if err == nil {
-		return 0, fmt.Errorf("user already exists")
+		return -1, fmt.Errorf("user already exists")
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
-		return 0, err
+		return -1, err
 	}
 	query := `INSERT INTO users (name, email, password, roles) VALUES ($1, $2, $3, $4) RETURNING id`
+
 	tag := r.db.QueryRow(ctx, query, name, email, password, roles)
 	var id int64
 	if err := tag.Scan(&id); err != nil {
-		return id, err
+		return -1, err
 	}
 	return id, nil
 }
