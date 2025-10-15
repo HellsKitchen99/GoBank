@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
@@ -23,20 +24,30 @@ func NewUserService(repo repository.UserRepository, jwtService *service.JwtServi
 	return &userService
 }
 
-func (j *UserService) Register(ctx context.Context, name, email, password string) error {
+func (j *UserService) Register(ctx context.Context, name, email, password string) (string, error) {
 	_, err := j.repo.CheckUserInDataBase(ctx, email)
 	if err == nil {
-		return ErrUserAlreadyExists
+		return "", ErrUserAlreadyExists
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
-		return err
+		return "", err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
 	}
 
 	roles := []string{string(domain.RoleUser)}
-	if err := j.repo.CreateUser(ctx, name, email, password, roles); err != nil {
-		return err
+	id, err := j.repo.CreateUser(ctx, name, email, string(hashedPassword), roles)
+	if err != nil {
+		return "", err
 	}
-	return nil
+	token, err := j.jwtService.GenerateJwtToken(id, roles)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 func (j *UserService) Login(ctx context.Context, email string, password string) (string, error) {
@@ -46,6 +57,9 @@ func (j *UserService) Login(ctx context.Context, email string, password string) 
 			return "", ErrUserNotFound
 		}
 		return "", err
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return "", ErrWrongPassword
 	}
 	token, err := j.jwtService.GenerateJwtToken(user.Id, user.Roles)
 	if err != nil {
