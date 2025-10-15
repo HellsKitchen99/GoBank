@@ -31,21 +31,19 @@ func (r *UserRepo) CheckUserInDataBase(ctx context.Context, email string) (domai
 	return user, nil
 }
 
-func (r *UserRepo) CreateUser(ctx context.Context, name, email, password string, roles []string) error {
+func (r *UserRepo) CreateUser(ctx context.Context, name, email, password string, roles []string) (int64, error) {
 	_, err := r.CheckUserInDataBase(ctx, email)
 	if err == nil {
-		return fmt.Errorf("user already exists")
+		return 0, fmt.Errorf("user already exists")
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
-		return err
+		return 0, err
 	}
-	query := `INSERT INTO users (name, email, password, roles) VALUES ($1, $2, $3, $4)`
-	tag, err := r.db.Exec(ctx, query, name, email, password, roles)
-	if err != nil {
-		return err
+	query := `INSERT INTO users (name, email, password, roles) VALUES ($1, $2, $3, $4) RETURNING id`
+	tag := r.db.QueryRow(ctx, query, name, email, password, roles)
+	var id int64
+	if err := tag.Scan(&id); err != nil {
+		return id, err
 	}
-	if tag.RowsAffected() != 1 {
-		return fmt.Errorf("bad insert")
-	}
-	return nil
+	return id, nil
 }
