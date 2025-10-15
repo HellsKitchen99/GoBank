@@ -2,6 +2,7 @@ package http
 
 import (
 	"GoBank/internal/domain"
+	"GoBank/internal/service"
 	"GoBank/internal/usecase"
 	"context"
 	"errors"
@@ -12,11 +13,13 @@ import (
 
 type UserHandler struct {
 	service *usecase.UserService
+	jwt     *service.JwtService
 }
 
-func NewUserHandler(service *usecase.UserService) *UserHandler {
+func NewUserHandler(service *usecase.UserService, jwt *service.JwtService) *UserHandler {
 	var userHandler UserHandler = UserHandler{
 		service: service,
+		jwt:     jwt,
 	}
 	return &userHandler
 }
@@ -38,7 +41,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	err := h.service.Register(ctx, userFromFront.Name, userFromFront.Email, userFromFront.Password)
+	token, err := h.service.Register(ctx, userFromFront.Name, userFromFront.Email, userFromFront.Password)
 
 	if errors.Is(err, usecase.ErrUserAlreadyExists) {
 		c.JSON(409, gin.H{
@@ -52,10 +55,10 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 	c.JSON(201, gin.H{
-		"answer": "user has been created succesfully",
+		"answer": token,
 	})
 }
 
 func (h *UserHandler) Login(ctx *gin.Context) {
-	//заглушка
+
 }
