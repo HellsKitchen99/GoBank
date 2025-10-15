@@ -33,7 +33,7 @@ func Run() error {
 	jwtService := service.NewJwtService(cjwt.Key, cjwt.Duration)
 	repo := repository.NewUserRepo(pool)
 	userService := usecase.NewUserService(repo, jwtService)
-	srv := server.NewServer(userService)
+	srv := server.NewServer(userService, jwtService)
 	srv.Run()
 	return nil
 }
