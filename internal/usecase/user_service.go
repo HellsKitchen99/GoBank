@@ -6,7 +6,6 @@ import (
 	"GoBank/internal/service"
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -24,15 +23,27 @@ func NewUserService(repo repository.UserRepository, jwtService *service.JwtServi
 	return &userService
 }
 
-func Register(ctx context.Context, name, email, password string) {
+func (j *UserService) Register(ctx context.Context, name, email, password string) error {
+	_, err := j.repo.CheckUserInDataBase(ctx, email)
+	if err == nil {
+		return ErrUserAlreadyExists
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
 
+	roles := []string{string(domain.RoleUser)}
+	if err := j.repo.CreateUser(ctx, name, email, password, roles); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (j *UserService) Login(ctx context.Context, email string, password string) (string, error) {
 	user, err := j.GetUserDetails(ctx, email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", fmt.Errorf("user not found")
+			return "", ErrUserNotFound
 		}
 		return "", err
 	}
