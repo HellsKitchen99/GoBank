@@ -2,7 +2,7 @@ package server
 
 import (
 	delivery "GoBank/internal/delivery/http"
-	"GoBank/internal/service"
+	"GoBank/internal/middleware"
 	"GoBank/internal/usecase"
 	"context"
 	"fmt"
@@ -20,10 +20,10 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func NewServer(userService *usecase.UserService, jwtServie *service.JwtService) *Server {
+func NewServer(userService *usecase.UserService, authMiddleware *middleware.AuthMiddleware, transactionService *usecase.TransactionService) *Server {
 	router := gin.Default()
 
-	userHandler := delivery.NewUserHandler(userService, jwtServie)
+	userHandler := delivery.NewUserHandler(userService, authMiddleware, transactionService)
 
 	userHandler.RegisterRoutes(router)
 
