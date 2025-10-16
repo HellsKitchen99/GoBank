@@ -94,8 +94,14 @@ func (t *TransactionsRepo) GetAmountOfSenderFromDataBase(ctx context.Context, fr
 	return amount, nil
 }
 
-func (t *TransactionsRepo) CheckUserToSendInDataBase() error {
-
+func (t *TransactionsRepo) CheckUserToSendInDataBase(ctx context.Context, to int64) error {
+	var user domain.User
+	query := `SELECT id, name, email, password, roles, amount FROM users WHERE id = $1`
+	row := t.db.QueryRow(ctx, query, to)
+	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Roles, &user.Amount); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (t *TransactionsRepo) MinusMoney(amount float64) error {
