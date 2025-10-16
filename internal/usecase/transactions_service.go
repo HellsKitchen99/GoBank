@@ -18,8 +18,22 @@ func NewTransactionService(repo repository.TransactionRepository) *TransactionSe
 	return &transactionService
 }
 
-func (r *TransactionService) ValidateTransaction(transactionFromFront domain.TransactionFromFront, from int64) bool {
-
+func (r *TransactionService) ValidateTransaction(transactionFromFront domain.TransactionFromFront, from int64) error {
+	to := transactionFromFront.To
+	amountToTransfer := transactionFromFront.Amount
+	if to == from {
+		return ErrSameUser
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	amount, err := r.repo.GetAmountOfSenderFromDataBase(ctx, from)
+	if err != nil {
+		return err
+	}
+	if amount < amountToTransfer {
+		return ErrAmountToTransfer
+	}
+	return nil
 }
 
 func (r *TransactionService) CreateTransaction(transactionFromFront domain.TransactionFromFront, from int64) error {
