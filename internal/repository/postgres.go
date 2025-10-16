@@ -31,6 +31,16 @@ func (r *UserRepo) CheckUserInDataBase(ctx context.Context, email string) (domai
 	return user, nil
 }
 
+func (r *UserRepo) CheckUserInDataBaseById(ctx context.Context, id int64) bool {
+	var user domain.User
+	query := `SELECT id, name, email, password, roles FROM users WHERE id = $1`
+	row := r.db.QueryRow(ctx, query, id)
+	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Roles); err != nil {
+		return false
+	}
+	return true
+}
+
 func (r *UserRepo) CreateUser(ctx context.Context, name, email, password string, roles []string) (int64, error) {
 	_, err := r.CheckUserInDataBase(ctx, email)
 	if err == nil {
