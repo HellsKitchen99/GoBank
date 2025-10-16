@@ -8,6 +8,7 @@ import (
 	"GoBank/internal/usecase"
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,7 +22,8 @@ func Run() error {
 
 	cdb := cfg.DB
 	cjwt := cfg.Jwt
-	connStr := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", cdb.User, cdb.Password, cdb.Host, cdb.Port, cdb.DbName)
+	password := url.QueryEscape(cdb.Password)
+	connStr := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", cdb.User, password, cdb.Host, cdb.Port, cdb.DbName)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	pool, err := pgxpool.New(ctx, connStr)
@@ -30,8 +32,8 @@ func Run() error {
 	}
 	defer pool.Close()
 
-	jwtService := service.NewJwtService(cjwt.Key, cjwt.Duration)
 	repo := repository.NewUserRepo(pool)
+	jwtService := service.NewJwtService(cjwt.Key, cjwt.Duration, repo)
 	userService := usecase.NewUserService(repo, jwtService)
 	srv := server.NewServer(userService, jwtService)
 	srv.Run()
