@@ -1,8 +1,6 @@
 package service
 
 import (
-	"GoBank/internal/repository"
-	"context"
 	"errors"
 	"time"
 
@@ -12,14 +10,12 @@ import (
 type JwtService struct {
 	Key            []byte
 	ExpirationTime time.Duration
-	repo           *repository.UserRepo
 }
 
-func NewJwtService(key string, exp time.Duration, repo *repository.UserRepo) *JwtService {
+func NewJwtService(key string, exp time.Duration) *JwtService {
 	var jwtService JwtService = JwtService{
 		Key:            []byte(key),
 		ExpirationTime: exp,
-		repo:           repo,
 	}
 	return &jwtService
 }
@@ -44,7 +40,7 @@ func (j *JwtService) GenerateJwtToken(id int64, roles []string) (string, error) 
 	return token.SignedString(j.Key)
 }
 
-func (j *JwtService) TokenValidation(token string) bool {
+func (j *JwtService) TokenValidation(token string) (int64, bool) {
 	var jwtKey []byte = j.Key
 	parsedToken, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 
@@ -55,41 +51,45 @@ func (j *JwtService) TokenValidation(token string) bool {
 		return []byte(jwtKey), nil
 	})
 	if err != nil {
-		return false
+		return -1, false
 	}
 
 	if !parsedToken.Valid {
-		return false
+		return -1, false
 	}
 
 	claims, ok := parsedToken.Claims.(jwt.MapClaims)
 	if !ok {
-		return false
+		return -1, false
 	}
 
 	exp, ok := claims["exp"].(float64)
 	if !ok {
-		return false
+		return -1, false
 	}
 	if time.Now().Unix() > int64(exp) {
-		return false
+		return -1, false
 	}
 	signer, ok := claims["iss"].(string)
 	if !ok {
-		return false
+		return -1, false
 	}
 	if signer != "GoBank" {
-		return false
+		return -1, false
 	}
 
 	userId, ok := claims["user_id"].(float64)
 	if !ok {
-		return false
+		return -1, false
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if find := j.repo.CheckUserInDataBaseById(ctx, int64(userId)); !find {
-		return false
-	}
-	return true
+	return int64(userId), true
+}
+
+func (j *JwtService) GetUserIdFromToken(token string) int64 {
+	parsedToken, _ := jwt.Parse(token, func(t *jwt.Token) (any, error) {
+		return []byte(j.Key), nil
+	})
+	claims, _ := parsedToken.Claims.(jwt.MapClaims)
+	userId := claims["user_id"].(float64)
+	return int64(userId)
 }
