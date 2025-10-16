@@ -2,6 +2,7 @@ package app
 
 import (
 	"GoBank/internal/config"
+	"GoBank/internal/middleware"
 	"GoBank/internal/repository"
 	"GoBank/internal/server"
 	"GoBank/internal/service"
@@ -32,10 +33,13 @@ func Run() error {
 	}
 	defer pool.Close()
 
-	repo := repository.NewUserRepo(pool)
-	jwtService := service.NewJwtService(cjwt.Key, cjwt.Duration, repo)
-	userService := usecase.NewUserService(repo, jwtService)
-	srv := server.NewServer(userService, jwtService)
+	userRepo := repository.NewUserRepo(pool)
+	jwtService := service.NewJwtService(cjwt.Key, cjwt.Duration)
+	userService := usecase.NewUserService(userRepo, jwtService)
+	authMiddleware := middleware.NewAuthMiddleware(jwtService, userRepo)
+	transactionRepo := repository.NewTransactionsRepo(pool)
+	transactionService := usecase.NewTransactionService(transactionRepo)
+	srv := server.NewServer(userService, authMiddleware, transactionService)
 	srv.Run()
 	return nil
 }
