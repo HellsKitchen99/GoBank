@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,7 +24,7 @@ func NewUserRepo(db *pgxpool.Pool) *UserRepo {
 
 func (r *UserRepo) CheckUserInDataBase(ctx context.Context, email string) (domain.User, error) {
 	var user domain.User
-	query := `SELECT id, name, email, password, roles FROM users WHERE email=$1`
+	query := `SELECT id, name, email, password, roles, amount FROM users WHERE email=$1`
 	row := r.db.QueryRow(ctx, query, email)
 	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Roles); err != nil {
 		return user, err
@@ -33,7 +34,7 @@ func (r *UserRepo) CheckUserInDataBase(ctx context.Context, email string) (domai
 
 func (r *UserRepo) CheckUserInDataBaseById(ctx context.Context, id int64) bool {
 	var user domain.User
-	query := `SELECT id, name, email, password, roles FROM users WHERE id = $1`
+	query := `SELECT id, name, email, password, roles, amount FROM users WHERE id = $1`
 	row := r.db.QueryRow(ctx, query, id)
 	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Roles); err != nil {
 		return false
@@ -57,4 +58,50 @@ func (r *UserRepo) CreateUser(ctx context.Context, name, email, password string,
 		return -1, err
 	}
 	return id, nil
+}
+
+// TRANSACTIONS
+type TransactionsRepo struct {
+	db *pgxpool.Pool
+}
+
+func NewTransactionsRepo(db *pgxpool.Pool) *TransactionsRepo {
+	var transactionsRepo TransactionsRepo = TransactionsRepo{
+		db: db,
+	}
+	return &transactionsRepo
+}
+
+func (t *TransactionsRepo) CreateTransaction(ctx context.Context, from, to int64, amount float64, timeOfCreation time.Time, status string) error {
+	query := `INSERT INTO transactions (from_user, to_user, amount, created_at, status) VALUES ($1, $2, $3, $4, $5)`
+	tag, err := t.db.Exec(ctx, query, from, to, amount, timeOfCreation, status)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("rows affected is not 1")
+	}
+	return nil
+}
+
+func (t *TransactionsRepo) GetAmountOfSenderFromDataBase(ctx context.Context, from int64) (float64, error) {
+	query := `SELECT amount FROM users WHERE id = $1`
+	var amount float64
+	row := t.db.QueryRow(ctx, query, from)
+	if err := row.Scan(&amount); err != nil {
+		return -1, err
+	}
+	return amount, nil
+}
+
+func (t *TransactionsRepo) CheckUserToSendInDataBase() error {
+
+}
+
+func (t *TransactionsRepo) MinusMoney(amount float64) error {
+
+}
+
+func (t *TransactionsRepo) AddMoney(amount float64) error {
+
 }
