@@ -60,6 +60,16 @@ func (r *UserRepo) CreateUser(ctx context.Context, name, email, password string,
 	return id, nil
 }
 
+func (r *UserRepo) GetInfoFromDataBase(ctx context.Context, id int64) (domain.User, error) {
+	var user domain.User
+	query := `SELECT id, name, email, password, roles, amount FROM users WHERE id = $1`
+	row := r.db.QueryRow(ctx, query, id)
+	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.Password, &user.Roles, &user.Amount); err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
 // TRANSACTIONS
 type TransactionsRepo struct {
 	db *pgxpool.Pool
