@@ -34,6 +34,7 @@ func (h *UserHandler) RegisterRoutes(r *gin.Engine) {
 	userGroup.Use(h.authMiddleware.Filter())
 	{
 		userGroup.POST("/transaction", h.Transaction)
+		userGroup.GET("/me", h.Me)
 	}
 
 }
@@ -136,5 +137,19 @@ func (h *UserHandler) Transaction(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{
 		"answer": "transaction success",
+	})
+}
+
+func (h *UserHandler) Me(c *gin.Context) {
+	from := c.GetInt64("user_id")
+	user, err := h.service.GetInfo(from)
+	if err != nil {
+		c.JSON(404, gin.H{
+			"error": "user not found",
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"info": user,
 	})
 }
