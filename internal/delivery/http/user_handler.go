@@ -35,6 +35,7 @@ func (h *UserHandler) RegisterRoutes(r *gin.Engine) {
 	{
 		userGroup.POST("/transaction", h.Transaction)
 		userGroup.GET("/me", h.Me)
+		userGroup.POST("/deposit", h.Deposit)
 	}
 
 }
@@ -151,5 +152,25 @@ func (h *UserHandler) Me(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{
 		"info": user,
+	})
+}
+
+func (h *UserHandler) Deposit(c *gin.Context) {
+	from := c.GetInt64("user_id")
+	var deposit domain.Deposit
+	if err := c.ShouldBindJSON(&deposit); err != nil {
+		c.JSON(400, gin.H{
+			"error": "bad json",
+		})
+		return
+	}
+	if err := h.service.MakeDeposit(deposit, from); err != nil {
+		c.JSON(500, gin.H{
+			"error": "internal server error",
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"answer": "deposit success",
 	})
 }
