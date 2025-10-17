@@ -49,6 +49,25 @@ func (r *TransactionService) CreateTransaction(transactionFromFront domain.Trans
 	return nil
 }
 
-func (r *TransactionService) GetAmountOfSender() {
+func (r *TransactionService) MakeTransaction(from, to int64, amount float64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	tx, err := r.repo.BeginTransaction(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
 
+	if err := r.repo.MinusMoney(ctx, tx, from, amount); err != nil {
+		return err
+	}
+
+	if err := r.repo.AddMoney(ctx, tx, to, amount); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+	return nil
 }
