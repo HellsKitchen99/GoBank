@@ -70,6 +70,18 @@ func (r *UserRepo) GetInfoFromDataBase(ctx context.Context, id int64) (domain.Us
 	return user, nil
 }
 
+func (r *UserRepo) AddDepositToDataBase(ctx context.Context, id int64, amount float64) error {
+	query := `UPDATE users SET amount = amount + $1 WHERE id = $2`
+	tag, err := r.db.Exec(ctx, query, amount, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("rows affected is not 1")
+	}
+	return nil
+}
+
 // TRANSACTIONS
 type TransactionsRepo struct {
 	db *pgxpool.Pool
