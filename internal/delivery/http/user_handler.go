@@ -128,7 +128,12 @@ func (h *UserHandler) Transaction(c *gin.Context) {
 		})
 		return
 	}
-	//make transaction
+	if err := h.transactionService.MakeTransaction(from, transaction.To, transaction.Amount); err != nil {
+		c.JSON(500, gin.H{
+			"error": "transaction error",
+		})
+		return
+	}
 	c.JSON(200, gin.H{
 		"answer": "transaction success",
 	})
