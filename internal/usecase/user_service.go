@@ -86,3 +86,12 @@ func (j *UserService) GetInfo(from int64) (domain.User, error) {
 	}
 	return user, nil
 }
+
+func (j *UserService) MakeDeposit(deposit domain.Deposit, from int64) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	if err := j.repo.AddDepositToDataBase(ctx, from, deposit.Amount); err != nil {
+		return err
+	}
+	return nil
+}
