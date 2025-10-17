@@ -80,7 +80,7 @@ func (j *UserService) GetUserDetails(ctx context.Context, email string) (domain.
 func (j *UserService) GetInfo(from int64) (domain.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	user, err := j.repo.GetInfofromDataBase(ctx, from)
+	user, err := j.repo.GetInfoFromDataBase(ctx, from)
 	if err != nil {
 		return user, nil
 	}
