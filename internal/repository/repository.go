@@ -13,6 +13,7 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, name, email, password string, roles []string) (int64, error)
 	CheckUserInDataBaseById(ctx context.Context, id int64) bool
 	GetInfoFromDataBase(ctx context.Context, id int64) (domain.User, error)
+	AddDepositToDataBase(ctx context.Context, id int64, amount float64) error
 }
 
 type TransactionRepository interface {
