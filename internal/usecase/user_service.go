@@ -6,6 +6,7 @@ import (
 	"GoBank/internal/service"
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -72,6 +73,16 @@ func (j *UserService) GetUserDetails(ctx context.Context, email string) (domain.
 	user, err := j.repo.CheckUserInDataBase(ctx, email)
 	if err != nil {
 		return user, err
+	}
+	return user, nil
+}
+
+func (j *UserService) GetInfo(from int64) (domain.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	user, err := j.repo.GetInfofromDataBase(ctx, from)
+	if err != nil {
+		return user, nil
 	}
 	return user, nil
 }
