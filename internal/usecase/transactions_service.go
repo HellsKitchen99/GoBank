@@ -58,11 +58,11 @@ func (r *TransactionService) MakeTransaction(from, to int64, amount float64) err
 	}
 	defer tx.Rollback(ctx)
 
-	if err := r.repo.MinusMoney(ctx, tx, from, amount); err != nil {
+	if err := r.repo.MinusMoneyTx(ctx, tx, from, amount); err != nil {
 		return err
 	}
 
-	if err := r.repo.AddMoney(ctx, tx, to, amount); err != nil {
+	if err := r.repo.AddMoneyTx(ctx, tx, to, amount); err != nil {
 		return err
 	}
 
