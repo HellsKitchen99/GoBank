@@ -104,10 +104,30 @@ func (t *TransactionsRepo) CheckUserToSendInDataBase(ctx context.Context, to int
 	return nil
 }
 
-func (t *TransactionsRepo) MinusMoney(amount float64) error {
-
+func (t *TransactionsRepo) BeginTransaction(ctx context.Context) (pgx.Tx, error) {
+	return t.db.Begin(ctx)
 }
 
-func (t *TransactionsRepo) AddMoney(amount float64) error {
+func (t *TransactionsRepo) MinusMoneyTx(ctx context.Context, tx pgx.Tx, id int64, amount float64) error {
+	query := `UPDATE users SET amount = amount - $1 WHERE id = $2 AND amount >= $1`
+	tag, err := tx.Exec(ctx, query, amount, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("not enough funds or user not found")
+	}
+	return nil
+}
 
+func (t *TransactionsRepo) AddMoneyTx(ctx context.Context, tx pgx.Tx, id int64, amount float64) error {
+	query := `UPDATE users SET amount = amount + $1 WHERE id = $2`
+	tag, err := tx.Exec(ctx, query, amount, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("rows affected is not 1")
+	}
+	return nil
 }
