@@ -1,0 +1,27 @@
+services:
+  calc:
+    build: .
+    image: calc
+    environment:
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: GoBank
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: GoBank
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
