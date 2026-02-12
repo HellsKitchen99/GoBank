@@ -18,8 +18,13 @@ services:
     image: postgres:17
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: GoBank
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d GoBank"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - db_data:/var/lib/postgresql/data
 
